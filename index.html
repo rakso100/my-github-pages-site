@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TUGA - Tuga Universal General Assessment</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="logo">
+                    <i class="fas fa-brain"></i>
+                    TUGA
+                </h1>
+                <div class="progress-container" id="progressContainer" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <span class="progress-text" id="progressText">Question 1 of 5</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Welcome Screen -->
+            <div class="screen welcome-screen active" id="welcomeScreen">
+                <div class="welcome-content">
+                    <div class="welcome-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <h2 class="welcome-title">Language Fluency Assessment</h2>
+                    <p class="welcome-description">
+                        Test your English language proficiency through 5 comprehensive sections. The assessment will automatically progress through each section to provide a complete fluency evaluation.
+                    </p>
+                    <div class="assessment-info">
+                        <div class="info-item">
+                            <i class="fas fa-list-ol"></i>
+                            <span>Worth 70%</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-clock"></i>
+                            <span>10 minutes total</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Double Marked</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary btn-large" id="startAssessmentBtn">
+                        <i class="fas fa-play"></i>
+                        Start Assessment
+                    </button>
+                </div>
+            </div>
+
+            <!-- Test Password Screen -->
+            <div class="screen test-password-screen" id="testPasswordScreen">
+                <div class="test-password-content">
+                    <div class="test-password-icon">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <h2 class="test-password-title">Enter Test Password</h2>
+                    <p class="test-password-description">
+                        Please enter the password to begin the assessment.
+                    </p>
+                    <div class="password-input-container">
+                        <input type="password" id="testPassword" class="password-input" placeholder="Enter password">
+                        <button class="btn btn-primary" id="submitTestPasswordBtn">
+                            <i class="fas fa-unlock"></i>
+                            Begin Test
+                        </button>
+                    </div>
+                    <div class="password-error" id="testPasswordError" style="display: none;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>Incorrect password. Please try again.</span>
+                    </div>
+                    <button class="btn btn-secondary" id="backToWelcomeFromTestPasswordBtn">
+                        <i class="fas fa-arrow-left"></i>
+                        Back to Welcome
+                    </button>
+                </div>
+            </div>
+
+            <!-- Section Selection Screen -->
+            <div class="screen section-screen" id="sectionScreen">
+                <div class="section-content">
+                    <div class="section-header">
+                        <button class="btn btn-secondary btn-back" id="backToWelcomeBtn">
+                            <i class="fas fa-arrow-left"></i>
+                            Back
+                        </button>
+                        <h2 class="section-title">Choose Your Quiz Section</h2>
+                    </div>
+                    
+                    <div class="sections-grid" id="sectionsGrid">
+                        <!-- Sections will be dynamically generated -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Assessment Summary Screen -->
+            <div class="screen assessment-summary-screen" id="assessmentSummaryScreen">
+                <div class="summary-content">
+                    <div class="summary-icon">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <h2 class="summary-title">Assessment Summary</h2>
+                    <div class="summary-details">
+                        <div class="summary-item">
+                            <i class="fas fa-list-ol"></i>
+                            <span class="summary-label">Total Questions:</span>
+                            <span class="summary-value" id="totalQuestions">0</span>
+                        </div>
+                        <div class="summary-item">
+                            <i class="fas fa-star"></i>
+                            <span class="summary-label">Total Marks:</span>
+                            <span class="summary-value" id="totalMarks">0</span>
+                        </div>
+                        <div class="summary-item">
+                            <i class="fas fa-clock"></i>
+                            <span class="summary-label">Time Limit:</span>
+                            <span class="summary-value" id="timeLimit">0 minutes</span>
+                        </div>
+                        <div class="summary-item">
+                            <i class="fas fa-layer-group"></i>
+                            <span class="summary-label">Sections:</span>
+                            <span class="summary-value" id="totalSections">0</span>
+                        </div>
+                    </div>
+                    <div class="summary-sections" id="summarySections">
+                        <!-- Section breakdown will be populated here -->
+                    </div>
+                    <div class="summary-actions">
+                        <button class="btn btn-secondary" id="backToWelcomeFromSummaryBtn">
+                            <i class="fas fa-arrow-left"></i>
+                            Back to Welcome
+                        </button>
+                        <button class="btn btn-primary" id="startAssessmentFromSummaryBtn">
+                            <i class="fas fa-play"></i>
+                            Start Assessment
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quiz Screen -->
+            <div class="screen quiz-screen" id="quizScreen">
+                <div class="question-container">
+                    <div class="quiz-header">
+                        <button class="btn btn-secondary btn-back" id="backToSectionBtn">
+                            <i class="fas fa-arrow-left"></i>
+                            Back to Sections
+                        </button>
+                        <div class="section-info">
+                            <span class="section-name" id="currentSectionName">General Knowledge</span>
+                        </div>
+                        <div class="timer-container" id="timerContainer" style="display: none;">
+                            <i class="fas fa-clock"></i>
+                            <span class="timer" id="timer">20:00</span>
+                        </div>
+                    </div>
+                    
+                    <div class="question-header">
+                        <span class="question-number" id="questionNumber">1</span>
+                        <h3 class="question-text" id="questionText">What is the capital of France?</h3>
+                    </div>
+                    
+                    <div class="options-container" id="optionsContainer">
+                        <!-- Options will be dynamically generated -->
+                    </div>
+                    
+                    <div class="question-actions">
+                        <button class="btn btn-secondary" id="prevBtn" disabled>
+                            <i class="fas fa-arrow-left"></i>
+                            Previous
+                        </button>
+                        <button class="btn btn-primary" id="nextBtn" disabled>
+                            Next
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual Marking Password Screen -->
+            <div class="screen manual-marking-password-screen" id="manualMarkingPasswordScreen">
+                <div class="manual-marking-content">
+                    <div class="manual-marking-icon">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <h2 class="manual-marking-title">Manual Marking Required</h2>
+                    <p class="manual-marking-description">
+                        Some sections require manual marking. Please enter the password to access the marking interface.
+                    </p>
+                    <div class="password-input-container">
+                        <input type="password" id="markingPassword" class="password-input" placeholder="Enter password">
+                        <button class="btn btn-primary" id="submitPasswordBtn">
+                            <i class="fas fa-unlock"></i>
+                            Access Marking
+                        </button>
+                    </div>
+                    <div class="password-error" id="passwordError" style="display: none;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>Incorrect password. Please try again.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual Marking Screen -->
+            <div class="screen manual-marking-screen" id="manualMarkingScreen">
+                <div class="manual-marking-content">
+                    <div class="marking-header">
+                        <button class="btn btn-secondary btn-back" id="backToPasswordBtn">
+                            <i class="fas fa-arrow-left"></i>
+                            Back
+                        </button>
+                        <h2 class="marking-title">Manual Marking</h2>
+                    </div>
+                    
+                    <div class="marking-sections" id="markingSections">
+                        <!-- Manual marking sections will be generated here -->
+                    </div>
+                    
+                    <div class="marking-actions">
+                        <button class="btn btn-primary" id="completeMarkingBtn">
+                            <i class="fas fa-check"></i>
+                            Complete Marking & View Results
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Test Ended Screen -->
+            <div class="screen test-ended-screen" id="testEndedScreen">
+                <div class="test-ended-container">
+                    <div class="test-ended-icon">
+                        <i class="fas fa-cloud-bolt"></i>
+                    </div>
+                    <h2>Test Ended Automatically</h2>
+                    <p>You have lost access to the test due to leaving the tab or moving your mouse outside the screen.</p>
+                    <div class="test-ended-grade">
+                        <div class="grade-circle">
+                            <span class="grade-letter">F</span>
+                        </div>
+                        <div class="grade-details">
+                            <h3>Automatic Failure</h3>
+                            <p>Score: 0%</p>
+                            <p class="grade-reason">Test terminated due to security violation</p>
+                        </div>
+                    </div>
+                    <div class="test-ended-actions">
+                        <button id="backToWelcomeFromEndedBtn" class="btn btn-secondary">
+                            <i class="fas fa-home"></i>
+                            Back to Welcome
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Screen -->
+            <div class="screen results-screen" id="resultsScreen">
+                <div class="results-content">
+                    <div class="score-circle">
+                        <div class="score-inner">
+                            <span class="score-percentage" id="scorePercentage">0%</span>
+                            <span class="score-label">Score</span>
+                        </div>
+                    </div>
+                    
+                    <h2 class="results-title" id="resultsTitle">Great Job!</h2>
+                    <p class="results-description" id="resultsDescription">
+                        You answered 4 out of 5 questions correctly.
+                    </p>
+                    
+                    <div class="results-breakdown">
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Correct Answers:</span>
+                            <span class="breakdown-value correct" id="correctCount">4</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Total Questions:</span>
+                            <span class="breakdown-value" id="totalCount">5</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Accuracy:</span>
+                            <span class="breakdown-value" id="accuracy">80%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="results-actions">
+                        <button class="btn btn-primary" id="retakeBtn">
+                            <i class="fas fa-redo"></i>
+                            Retake Assessment
+                        </button>
+                        <button class="btn btn-secondary" id="newSectionBtn">
+                            <i class="fas fa-list"></i>
+                            Try Another Section
+                        </button>
+                        <button class="btn btn-secondary" id="shareBtn">
+                            <i class="fas fa-share"></i>
+                            Share Results
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2024 Quiz Master. Built with ❤️ for learning.</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
