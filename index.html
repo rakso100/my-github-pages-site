@@ -14,7 +14,7 @@
         <header class="header">
             <div class="header-content">
                 <h1 class="logo">
-                    <i class="fas fa-brain"></i>
+                    <span class="fas fa-lightbulb" aria-hidden="true"></span>
                     TUGA
                 </h1>
                 <div class="progress-container" id="progressContainer" style="display: none;">
@@ -32,28 +32,28 @@
             <div class="screen welcome-screen active" id="welcomeScreen">
                 <div class="welcome-content">
                     <div class="welcome-icon">
-                        <i class="fas fa-graduation-cap"></i>
+                        <span class="fas fa-graduation-cap" aria-hidden="true"></span>
                     </div>
                     <h2 class="welcome-title">Language Fluency Assessment</h2>
                     <p class="welcome-description">
-                        Test your English language proficiency through 5 comprehensive sections. The assessment will automatically progress through each section to provide a complete fluency evaluation.
+                        This is Part 1 of the TUGA. The Tuga Universal General Assessment is a comprehensive assessment of your language proficiency in TUGA, it will cover the words highlighted in green on the document.
                     </p>
                     <div class="assessment-info">
                         <div class="info-item">
-                            <i class="fas fa-list-ol"></i>
+                            <span class="fas fa-list-ol" aria-hidden="true"></span>
                             <span>Worth 70%</span>
                         </div>
                         <div class="info-item">
-                            <i class="fas fa-clock"></i>
+                            <span class="fas fa-clock" aria-hidden="true"></span>
                             <span>10 minutes total</span>
                         </div>
                         <div class="info-item">
-                            <i class="fas fa-chart-line"></i>
+                            <span class="fas fa-chart-line" aria-hidden="true"></span>
                             <span>Double Marked</span>
                         </div>
                     </div>
                     <button class="btn btn-primary btn-large" id="startAssessmentBtn">
-                        <i class="fas fa-play"></i>
+                        <span class="fas fa-play" aria-hidden="true"></span>
                         Start Assessment
                     </button>
                 </div>
@@ -63,7 +63,7 @@
             <div class="screen test-password-screen" id="testPasswordScreen">
                 <div class="test-password-content">
                     <div class="test-password-icon">
-                        <i class="fas fa-lock"></i>
+                        <span class="fas fa-lock" aria-hidden="true"></span>
                     </div>
                     <h2 class="test-password-title">Enter Test Password</h2>
                     <p class="test-password-description">
@@ -72,18 +72,40 @@
                     <div class="password-input-container">
                         <input type="password" id="testPassword" class="password-input" placeholder="Enter password">
                         <button class="btn btn-primary" id="submitTestPasswordBtn">
-                            <i class="fas fa-unlock"></i>
+                            <span class="fas fa-unlock" aria-hidden="true"></span>
                             Begin Test
                         </button>
                     </div>
                     <div class="password-error" id="testPasswordError" style="display: none;">
-                        <i class="fas fa-exclamation-triangle"></i>
+                        <span class="fas fa-exclamation-triangle" aria-hidden="true"></span>
                         <span>Incorrect password. Please try again.</span>
                     </div>
                     <button class="btn btn-secondary" id="backToWelcomeFromTestPasswordBtn">
-                        <i class="fas fa-arrow-left"></i>
+                        <span class="fas fa-arrow-left" aria-hidden="true"></span>
                         Back to Welcome
                     </button>
+                </div>
+            </div>
+
+            <!-- Warning Screen -->
+            <div class="screen warning-screen" id="warningScreen">
+                <div class="warning-content">
+                    <div class="warning-icon">
+                        <span class="fas fa-exclamation-triangle" aria-hidden="true"></span>
+                    </div>
+                    <h2 class="warning-title">⚠️ Security Warning</h2>
+                    <p class="warning-description">
+                        You have left the test area or switched tabs. This is your <strong>first and only warning</strong>.
+                    </p>
+                    <div class="warning-details">
+                        <p>If you leave the test area again, your test will be automatically terminated and you will receive a failing grade.</p>
+                    </div>
+                    <div class="warning-actions">
+                        <button class="btn btn-primary" id="acknowledgeWarningBtn">
+                            <span class="fas fa-check" aria-hidden="true"></span>
+                            I Understand - Continue Test
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -92,7 +114,7 @@
                 <div class="section-content">
                     <div class="section-header">
                         <button class="btn btn-secondary btn-back" id="backToWelcomeBtn">
-                            <i class="fas fa-arrow-left"></i>
+                            <span class="fas fa-arrow-left" aria-hidden="true"></span>
                             Back
                         </button>
                         <h2 class="section-title">Choose Your Quiz Section</h2>
@@ -108,27 +130,27 @@
             <div class="screen assessment-summary-screen" id="assessmentSummaryScreen">
                 <div class="summary-content">
                     <div class="summary-icon">
-                        <i class="fas fa-clipboard-list"></i>
+                        <span class="fas fa-clipboard-list" aria-hidden="true"></span>
                     </div>
                     <h2 class="summary-title">Assessment Summary</h2>
                     <div class="summary-details">
                         <div class="summary-item">
-                            <i class="fas fa-list-ol"></i>
+                            <span class="fas fa-list-ol" aria-hidden="true"></span>
                             <span class="summary-label">Total Questions:</span>
                             <span class="summary-value" id="totalQuestions">0</span>
                         </div>
                         <div class="summary-item">
-                            <i class="fas fa-star"></i>
+                            <span class="fas fa-star" aria-hidden="true"></span>
                             <span class="summary-label">Total Marks:</span>
                             <span class="summary-value" id="totalMarks">0</span>
                         </div>
                         <div class="summary-item">
-                            <i class="fas fa-clock"></i>
+                            <span class="fas fa-clock" aria-hidden="true"></span>
                             <span class="summary-label">Time Limit:</span>
                             <span class="summary-value" id="timeLimit">0 minutes</span>
                         </div>
                         <div class="summary-item">
-                            <i class="fas fa-layer-group"></i>
+                            <span class="fas fa-layers" aria-hidden="true"></span>
                             <span class="summary-label">Sections:</span>
                             <span class="summary-value" id="totalSections">0</span>
                         </div>
@@ -138,11 +160,11 @@
                     </div>
                     <div class="summary-actions">
                         <button class="btn btn-secondary" id="backToWelcomeFromSummaryBtn">
-                            <i class="fas fa-arrow-left"></i>
+                            <span class="fas fa-arrow-left" aria-hidden="true"></span>
                             Back to Welcome
                         </button>
                         <button class="btn btn-primary" id="startAssessmentFromSummaryBtn">
-                            <i class="fas fa-play"></i>
+                            <span class="fas fa-play" aria-hidden="true"></span>
                             Start Assessment
                         </button>
                     </div>
@@ -154,14 +176,14 @@
                 <div class="question-container">
                     <div class="quiz-header">
                         <button class="btn btn-secondary btn-back" id="backToSectionBtn">
-                            <i class="fas fa-arrow-left"></i>
+                            <span class="fas fa-arrow-left" aria-hidden="true"></span>
                             Back to Sections
                         </button>
                         <div class="section-info">
                             <span class="section-name" id="currentSectionName">General Knowledge</span>
                         </div>
                         <div class="timer-container" id="timerContainer" style="display: none;">
-                            <i class="fas fa-clock"></i>
+                            <span class="fas fa-clock" aria-hidden="true"></span>
                             <span class="timer" id="timer">20:00</span>
                         </div>
                     </div>
@@ -177,12 +199,12 @@
                     
                     <div class="question-actions">
                         <button class="btn btn-secondary" id="prevBtn" disabled>
-                            <i class="fas fa-arrow-left"></i>
+                            <span class="fas fa-arrow-left" aria-hidden="true"></span>
                             Previous
                         </button>
                         <button class="btn btn-primary" id="nextBtn" disabled>
                             Next
-                            <i class="fas fa-arrow-right"></i>
+                            <span class="fas fa-arrow-right" aria-hidden="true"></span>
                         </button>
                     </div>
                 </div>
@@ -192,7 +214,7 @@
             <div class="screen manual-marking-password-screen" id="manualMarkingPasswordScreen">
                 <div class="manual-marking-content">
                     <div class="manual-marking-icon">
-                        <i class="fas fa-lock"></i>
+                        <span class="fas fa-lock" aria-hidden="true"></span>
                     </div>
                     <h2 class="manual-marking-title">Manual Marking Required</h2>
                     <p class="manual-marking-description">
@@ -201,12 +223,12 @@
                     <div class="password-input-container">
                         <input type="password" id="markingPassword" class="password-input" placeholder="Enter password">
                         <button class="btn btn-primary" id="submitPasswordBtn">
-                            <i class="fas fa-unlock"></i>
+                            <span class="fas fa-unlock" aria-hidden="true"></span>
                             Access Marking
                         </button>
                     </div>
                     <div class="password-error" id="passwordError" style="display: none;">
-                        <i class="fas fa-exclamation-triangle"></i>
+                        <span class="fas fa-exclamation-triangle" aria-hidden="true"></span>
                         <span>Incorrect password. Please try again.</span>
                     </div>
                 </div>
@@ -217,7 +239,7 @@
                 <div class="manual-marking-content">
                     <div class="marking-header">
                         <button class="btn btn-secondary btn-back" id="backToPasswordBtn">
-                            <i class="fas fa-arrow-left"></i>
+                            <span class="fas fa-arrow-left" aria-hidden="true"></span>
                             Back
                         </button>
                         <h2 class="marking-title">Manual Marking</h2>
@@ -229,7 +251,7 @@
                     
                     <div class="marking-actions">
                         <button class="btn btn-primary" id="completeMarkingBtn">
-                            <i class="fas fa-check"></i>
+                            <span class="fas fa-check" aria-hidden="true"></span>
                             Complete Marking & View Results
                         </button>
                     </div>
@@ -240,7 +262,7 @@
             <div class="screen test-ended-screen" id="testEndedScreen">
                 <div class="test-ended-container">
                     <div class="test-ended-icon">
-                        <i class="fas fa-cloud-bolt"></i>
+                        <span class="fas fa-bolt" aria-hidden="true"></span>
                     </div>
                     <h2>Test Ended Automatically</h2>
                     <p>You have lost access to the test due to leaving the tab or moving your mouse outside the screen.</p>
@@ -256,7 +278,7 @@
                     </div>
                     <div class="test-ended-actions">
                         <button id="backToWelcomeFromEndedBtn" class="btn btn-secondary">
-                            <i class="fas fa-home"></i>
+                            <span class="fas fa-home" aria-hidden="true"></span>
                             Back to Welcome
                         </button>
                     </div>
@@ -295,15 +317,15 @@
                     
                     <div class="results-actions">
                         <button class="btn btn-primary" id="retakeBtn">
-                            <i class="fas fa-redo"></i>
+                            <span class="fas fa-redo" aria-hidden="true"></span>
                             Retake Assessment
                         </button>
                         <button class="btn btn-secondary" id="newSectionBtn">
-                            <i class="fas fa-list"></i>
+                            <span class="fas fa-list" aria-hidden="true"></span>
                             Try Another Section
                         </button>
                         <button class="btn btn-secondary" id="shareBtn">
-                            <i class="fas fa-share"></i>
+                            <span class="fas fa-share" aria-hidden="true"></span>
                             Share Results
                         </button>
                     </div>
@@ -312,8 +334,8 @@
         </main>
 
         <!-- Footer -->
-        <footer class="footer">
-            <p>&copy; 2024 Quiz Master. Built with ❤️ for learning.</p>
+        <footer class="footers">
+            <p>&copy; 2024 TUGA Assessment. Built for learning.</p>
         </footer>
     </div>
 
