@@ -107,11 +107,12 @@ body::before {
 .container {
     max-width: 1200px;
     margin: 0 auto;
-    min-height: 100vh;
+    height: 100vh;
     display: flex;
     flex-direction: column;
     padding: 0 20px;
     width: 100%;
+    overflow: hidden; /* prevent scrolling on container */
 }
 
 /* Full width container - now default */
@@ -198,8 +199,9 @@ body::before {
     flex: 1;
     position: relative; /* establish stacking context for overlapping screens */
     width: 100%;
-    padding: 0 0 40px;
+    padding: 0;
     margin: 0;
+    min-height: 0; /* prevent flex item from growing beyond container */
 }
 
 /* Main content is now full width by default */
@@ -219,6 +221,7 @@ body::before {
     position: absolute; /* overlap within main-content */
     inset: 0; /* fill the main-content area */
     margin: 0; /* no flow margins when overlapping */
+    overflow-y: auto; /* allow scrolling within screen if needed */
     overflow-x: hidden;
     z-index: 0;
 }
@@ -286,13 +289,14 @@ body::before {
     text-align: center;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 4rem 2rem;
+    padding: 2rem;
     width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 40vh;
+    min-height: 0;
+    height: 100%;
 }
 
 .welcome-icon {
@@ -1250,6 +1254,73 @@ body::before {
     line-height: 1.6;
 }
 
+/* Warning Screen Styles */
+.warning-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, var(--warning-50) 0%, var(--orange-50) 100%);
+}
+
+.warning-content {
+    background: var(--white);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
+    padding: 3rem;
+    max-width: 600px;
+    width: 100%;
+    text-align: center;
+    border: 2px solid var(--warning-200);
+}
+
+.warning-icon {
+    font-size: 4rem;
+    color: var(--warning-500);
+    margin-bottom: 1.5rem;
+    animation: pulse 2s infinite;
+}
+
+.warning-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--warning-700);
+    margin-bottom: 1rem;
+}
+
+.warning-description {
+    color: var(--gray-700);
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+    font-size: 1.1rem;
+}
+
+.warning-details {
+    background: var(--warning-50);
+    border: 1px solid var(--warning-200);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.warning-details p {
+    color: var(--warning-700);
+    font-weight: 500;
+    margin: 0;
+    font-size: 1rem;
+}
+
+.warning-actions {
+    display: flex;
+    justify-content: center;
+}
+
+.warning-actions .btn {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
 /* Manual Marking Password Screen */
 .manual-marking-password-screen .manual-marking-content {
     text-align: center;
@@ -1565,11 +1636,27 @@ body::before {
 }
 
 /* Footer */
-.footer {
+.footers {
     text-align: center;
     padding: 20px 0;
-    color: rgba(255, 255, 255, 0.8);
+    color: #000000;
     font-size: 0.9rem;
+    background: transparent;
+    pointer-events: none !important; /* Make footer non-clickable */
+    user-select: none !important; /* Prevent text selection */
+    cursor: default !important; /* Ensure cursor doesn't change */
+}
+
+.footers p {
+    pointer-events: none !important; /* Ensure paragraph is also non-clickable */
+    user-select: none !important; /* Prevent text selection */
+    cursor: default !important; /* Ensure cursor doesn't change */
+}
+
+.footers * {
+    pointer-events: none !important; /* Make all child elements non-clickable */
+    user-select: none !important; /* Prevent text selection on all children */
+    cursor: default !important; /* Ensure cursor doesn't change */
 }
 
 /* Animations */
@@ -1666,7 +1753,7 @@ body::before {
         flex-direction: column;
     }
 
-    /* Slightly reduce min-height on mobile to avoid vertical overflow */
+    /* Ensure mobile screens fit properly */
     .welcome-screen,
     .section-screen,
     .quiz-screen,
@@ -1676,7 +1763,7 @@ body::before {
     .manual-marking-screen,
     .test-ended-screen,
     .test-password-screen {
-        min-height: 55vh;
+        height: 100%;
         padding-top: 6px;
     }
 }
@@ -1709,3 +1796,4 @@ body::before {
         font-size: 1.5rem;
     }
 }
+
