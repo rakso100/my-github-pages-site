@@ -7,6 +7,13 @@ const sectionQuestionCounts = {
     numbers: "all"        // Show all questions from numbers section
 };
 
+// Auth state for assessment access
+let isAuthenticated = false;
+
+// Warning system for test termination
+let hasReceivedWarning = false;
+let warningTimeout = null;
+
 // Manual marking configuration
 const manualMarkingConfig = {
     enabled: true,
@@ -29,7 +36,7 @@ const timeLimitConfig = {
 const quizSections = {
     vocabulary: {
         title: "General/Common Vocabulary",
-        icon: "fas fa-book",
+        icon: "fas fa-book-open",
         description: "We'll be testing your general ability to translate words to the opposite language.",
         difficulty: "Common Ability",
         questions: [
@@ -199,6 +206,7 @@ let assessmentStartTime = null;
 // DOM Elements
 const welcomeScreen = document.getElementById('welcomeScreen');
 const testPasswordScreen = document.getElementById('testPasswordScreen');
+const warningScreen = document.getElementById('warningScreen');
 const sectionScreen = document.getElementById('sectionScreen');
 const quizScreen = document.getElementById('quizScreen');
 const resultsScreen = document.getElementById('resultsScreen');
@@ -276,10 +284,14 @@ function initQuiz() {
     const testPassword = document.getElementById('testPassword');
     const backToWelcomeFromTestPasswordBtn = document.getElementById('backToWelcomeFromTestPasswordBtn');
     
+    // Warning screen event listeners
+    const acknowledgeWarningBtn = document.getElementById('acknowledgeWarningBtn');
+    
     if (submitTestPasswordBtn) {
         submitTestPasswordBtn.addEventListener('click', () => {
             const enteredPassword = testPassword.value;
             if (enteredPassword === manualMarkingConfig.password) {
+                isAuthenticated = true;
                 showScreen('assessmentSummaryScreen');
             } else {
                 const errorDiv = document.getElementById('testPasswordError');
@@ -297,6 +309,7 @@ function initQuiz() {
             if (e.key === 'Enter') {
                 const enteredPassword = testPassword.value;
                 if (enteredPassword === manualMarkingConfig.password) {
+                    isAuthenticated = true;
                     showScreen('assessmentSummaryScreen');
                 } else {
                     const errorDiv = document.getElementById('testPasswordError');
@@ -317,6 +330,18 @@ function initQuiz() {
                 errorDiv.style.display = 'none';
             }
             showScreen('welcomeScreen');
+        });
+    }
+    
+    if (acknowledgeWarningBtn) {
+        acknowledgeWarningBtn.addEventListener('click', () => {
+            // Clear any pending warning timeout
+            if (warningTimeout) {
+                clearTimeout(warningTimeout);
+                warningTimeout = null;
+            }
+            // Return to the quiz screen
+            showScreen('quizScreen');
         });
     }
     
@@ -345,12 +370,20 @@ function initQuiz() {
 
 // Start the complete assessment
 function startAssessment() {
-    // Show test password screen first
-    showScreen('testPasswordScreen');
+    // Prevent footer clicks from starting assessment
+    if (event && event.target && event.target.closest('.footers')) {
+        console.log('Footer click prevented from starting assessment');
+        return;
+    }
+    
+    // Require authentication before starting
+    if (!isAuthenticated) return showScreen('testPasswordScreen');
+    showAssessmentSummary();
 }
 
 // Show assessment summary before starting
 function showAssessmentSummary() {
+    if (!isAuthenticated) return showScreen('testPasswordScreen');
     calculateAssessmentTotals();
     renderSummarySections();
     showScreen('assessmentSummary');
@@ -506,21 +539,33 @@ function initializeFocusDetection() {
 // Handle tab visibility change
 function handleVisibilityChange() {
     if (document.hidden && isQuizActive()) {
-        endTestAutomatically('tab');
+        if (!hasReceivedWarning) {
+            showWarning('tab');
+        } else {
+            endTestAutomatically('tab');
+        }
     }
 }
 
 // Handle mouse leaving the screen
 function handleMouseLeave(event) {
     if (isQuizActive() && event.clientY <= 0) {
-        endTestAutomatically('mouse');
+        if (!hasReceivedWarning) {
+            showWarning('mouse');
+        } else {
+            endTestAutomatically('mouse');
+        }
     }
 }
 
 // Handle window blur (when user switches to another application)
 function handleWindowBlur() {
     if (isQuizActive()) {
-        endTestAutomatically('window');
+        if (!hasReceivedWarning) {
+            showWarning('window');
+        } else {
+            endTestAutomatically('window');
+        }
     }
 }
 
@@ -529,6 +574,28 @@ function isQuizActive() {
     return quizScreen.classList.contains('active') || 
            manualMarkingPasswordScreen.classList.contains('active') ||
            manualMarkingScreen.classList.contains('active');
+}
+
+// Show warning screen
+function showWarning(reason) {
+    console.log(`Showing warning for: ${reason}`);
+    
+    // Set warning flag
+    hasReceivedWarning = true;
+    
+    // Clear any existing timeout
+    if (warningTimeout) {
+        clearTimeout(warningTimeout);
+    }
+    
+    // Show warning screen
+    showScreen('warningScreen');
+    
+    // Set timeout to automatically end test if user doesn't acknowledge warning
+    warningTimeout = setTimeout(() => {
+        console.log('Warning timeout reached, ending test');
+        endTestAutomatically(`${reason} - warning timeout`);
+    }, 30000); // 30 seconds timeout
 }
 
 // End test automatically
@@ -560,6 +627,12 @@ function cleanupFocusDetection() {
     document.removeEventListener('visibilitychange', handleVisibilityChange);
     document.removeEventListener('mouseleave', handleMouseLeave);
     window.removeEventListener('blur', handleWindowBlur);
+    
+    // Clear warning timeout
+    if (warningTimeout) {
+        clearTimeout(warningTimeout);
+        warningTimeout = null;
+    }
 }
 
 // Reset quiz to initial state
@@ -582,6 +655,13 @@ function resetQuiz() {
     // Reset time
     timeRemaining = 0;
     assessmentStartTime = null;
+    
+    // Reset warning state
+    hasReceivedWarning = false;
+    if (warningTimeout) {
+        clearTimeout(warningTimeout);
+        warningTimeout = null;
+    }
     
     // Clean up focus detection
     cleanupFocusDetection();
@@ -629,6 +709,9 @@ function shuffleArray(array) {
 
 // Start the next section in sequence
 function startNextSection() {
+    console.log('Starting next section, index:', currentSectionIndex);
+    console.log('Section order:', sectionOrder);
+    
     if (currentSectionIndex >= sectionOrder.length) {
         // All sections completed, show final results
         showFinalResults();
@@ -638,9 +721,19 @@ function startNextSection() {
     const sectionKey = sectionOrder[currentSectionIndex];
     const section = quizSections[sectionKey];
     
+    console.log('Section key:', sectionKey);
+    console.log('Section data:', section);
+    
+    if (!section || !section.questions) {
+        console.error('Section not found or has no questions:', sectionKey);
+        return;
+    }
+    
     // Set up current section with all questions
     currentSection = sectionKey;
     currentQuizData = [...section.questions];
+    
+    console.log('Current quiz data set to:', currentQuizData);
     
     // Use all questions from the section (no random selection)
     
@@ -666,6 +759,12 @@ function showWelcome() {
 
 // Show specific screen
 function showScreen(screenName) {
+    // Prevent footer clicks from changing screens
+    if (event && event.target && event.target.closest('.footers')) {
+        console.log('Footer click prevented from changing screen to:', screenName);
+        return;
+    }
+    
     // Hide all screens
     document.querySelectorAll('.screen').forEach(screen => {
         screen.classList.remove('active');
@@ -677,13 +776,54 @@ function showScreen(screenName) {
         targetScreen.classList.add('active');
         targetScreen.classList.add('fade-in-up');
         
+        // Clear password fields when showing password screens
+        if (screenName === 'testPasswordScreen' || screenName === 'testPassword') {
+            const testPasswordField = document.getElementById('testPassword');
+            if (testPasswordField) {
+                testPasswordField.value = '';
+            }
+            // Hide any error messages
+            const testPasswordError = document.getElementById('testPasswordError');
+            if (testPasswordError) {
+                testPasswordError.style.display = 'none';
+            }
+        }
+        
+        if (screenName === 'manualMarkingPasswordScreen' || screenName === 'manualMarkingPassword') {
+            const manualPasswordField = document.getElementById('manualMarkingPassword');
+            if (manualPasswordField) {
+                manualPasswordField.value = '';
+            }
+            // Hide any error messages
+            const manualPasswordError = document.getElementById('manualMarkingPasswordError');
+            if (manualPasswordError) {
+                manualPasswordError.style.display = 'none';
+            }
+        }
+        
         // All screens are now full width by default - no special handling needed
     }
 }
 
 // Load current question
 function loadQuestion() {
+    console.log('Loading question:', currentQuestion);
+    console.log('Current quiz data:', currentQuizData);
+    console.log('Current section:', currentSection);
+    
+    if (!currentQuizData || currentQuizData.length === 0) {
+        console.error('No quiz data available');
+        return;
+    }
+    
     const question = currentQuizData[currentQuestion];
+    
+    if (!question) {
+        console.error('No question found at index:', currentQuestion);
+        return;
+    }
+    
+    console.log('Question data:', question);
     
     // Update question number and text
     questionNumber.textContent = currentQuestion + 1;
@@ -1143,12 +1283,12 @@ function updateNavigationButtons() {
     if (currentQuestion === currentQuizData.length - 1) {
         // Check if this is the last section
         if (currentSectionIndex === sectionOrder.length - 1) {
-            nextBtn.innerHTML = 'Finish Assessment <i class="fas fa-check"></i>';
+            nextBtn.innerHTML = 'Finish Assessment <span class="fas fa-check" aria-hidden="true"></span>';
         } else {
-            nextBtn.innerHTML = 'Finish Section <i class="fas fa-check"></i>';
+            nextBtn.innerHTML = 'Finish Section <span class="fas fa-check" aria-hidden="true"></span>';
         }
     } else {
-        nextBtn.innerHTML = 'Next <i class="fas fa-arrow-right"></i>';
+        nextBtn.innerHTML = 'Next <span class="fas fa-arrow-right" aria-hidden="true"></span>';
     }
 }
 
@@ -1258,11 +1398,13 @@ function needsManualMarking() {
 
 // Show manual marking password screen
 function showManualMarkingPassword() {
+    if (!isAuthenticated) return showScreen('testPasswordScreen');
     showScreen('manualMarkingPassword');
 }
 
 // Show manual marking interface
 function showManualMarkingInterface() {
+    if (!isAuthenticated) return showScreen('testPasswordScreen');
     renderManualMarkingSections();
     showScreen('manualMarking');
 }
@@ -1333,14 +1475,14 @@ function populateMarkingQuestions(sectionKey, sectionScore) {
                         data-section="${sectionKey}" 
                         data-question="${index}" 
                         data-marks="${maxMarks}">
-                    <i class="fas fa-check"></i>
+                    <span class="fas fa-check" aria-hidden="true"></span>
                     Correct (${maxMarks} marks)
                 </button>
                 <button class="marking-btn marking-incorrect" 
                         data-section="${sectionKey}" 
                         data-question="${index}" 
                         data-marks="0">
-                    <i class="fas fa-times"></i>
+                    <span class="fas fa-times" aria-hidden="true"></span>
                     Incorrect (0 marks)
                 </button>
                 <div class="marking-custom">
@@ -1374,6 +1516,11 @@ function populateMarkingQuestions(sectionKey, sectionScore) {
 function addMarkingEventListeners() {
     // Use event delegation to handle dynamically created buttons
     document.addEventListener('click', (e) => {
+        // Ignore clicks on footer
+        if (e.target.closest('.footers')) {
+            return;
+        }
+        
         if (e.target.classList.contains('marking-correct')) {
             console.log('Correct button clicked');
             const sectionKey = e.target.dataset.section;
@@ -1578,6 +1725,7 @@ function isAnswerCorrect(question, userAnswer) {
 
 // Show section completion message
 function showSectionComplete() {
+    if (!isAuthenticated) return showScreen('testPasswordScreen');
     const sectionName = quizSections[currentSection].title;
     const nextSectionName = quizSections[sectionOrder[currentSectionIndex]].title;
     
@@ -1614,6 +1762,7 @@ function showSectionComplete() {
 
 // Show final comprehensive results
 function showFinalResults() {
+    if (!isAuthenticated) return showScreen('testPasswordScreen');
     // Calculate overall score
     let totalScore = 0;
     let totalQuestions = 0;
@@ -1827,7 +1976,7 @@ function shareResults() {
         navigator.clipboard.writeText(shareText).then(() => {
             // Show temporary success message
             const originalText = shareBtn.innerHTML;
-            shareBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            shareBtn.innerHTML = '<span class="fas fa-check" aria-hidden="true"></span> Copied!';
             shareBtn.style.background = '#22c55e';
             
             setTimeout(() => {
