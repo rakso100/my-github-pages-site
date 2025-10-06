@@ -235,17 +235,20 @@ const correctCount = document.getElementById('correctCount');
 const totalCount = document.getElementById('totalCount');
 const accuracy = document.getElementById('accuracy');
 
+// Per-section answers store to correctly serialize submissions
+let userAnswersBySection = {};
+
 // Initialize the quiz
 function initQuiz() {
     // Add event listeners
-    startAssessmentBtn.addEventListener('click', startAssessment);
-    backToWelcomeBtn.addEventListener('click', showWelcome);
-    backToSectionBtn.addEventListener('click', showWelcome);
-    prevBtn.addEventListener('click', previousQuestion);
-    nextBtn.addEventListener('click', nextQuestion);
-    retakeBtn.addEventListener('click', retakeAssessment);
-    newSectionBtn.addEventListener('click', showWelcome);
-    shareBtn.addEventListener('click', shareResults);
+    if (startAssessmentBtn) startAssessmentBtn.addEventListener('click', startAssessment);
+    if (backToWelcomeBtn) backToWelcomeBtn.addEventListener('click', showWelcome);
+    if (backToSectionBtn) backToSectionBtn.addEventListener('click', showWelcome);
+    if (prevBtn) prevBtn.addEventListener('click', previousQuestion);
+    if (nextBtn) nextBtn.addEventListener('click', nextQuestion);
+    if (retakeBtn) retakeBtn.addEventListener('click', retakeAssessment);
+    if (newSectionBtn) newSectionBtn.addEventListener('click', showWelcome);
+    if (shareBtn) shareBtn.addEventListener('click', shareResults);
     
     // Manual marking event listeners
     const submitPasswordBtn = document.getElementById('submitPasswordBtn');
@@ -335,13 +338,22 @@ function initQuiz() {
     
     if (acknowledgeWarningBtn) {
         acknowledgeWarningBtn.addEventListener('click', () => {
+            console.log('Warning acknowledged, returning to quiz');
+            
             // Clear any pending warning timeout
             if (warningTimeout) {
                 clearTimeout(warningTimeout);
                 warningTimeout = null;
             }
-            // Return to the quiz screen
-            showScreen('quizScreen');
+            
+            // Return to the quiz screen with error handling
+            try {
+                showScreen('quizScreen');
+            } catch (error) {
+                console.error('Error returning to quiz screen:', error);
+                // Fallback: try to show welcome screen
+                showScreen('welcomeScreen');
+            }
         });
     }
     
@@ -376,14 +388,19 @@ function startAssessment() {
         return;
     }
     
-    // Require authentication before starting
-    if (!isAuthenticated) return showScreen('testPasswordScreen');
+    // For testing purposes, allow direct access without authentication
+    // In production, uncomment the line below:
+    // if (!isAuthenticated) return showScreen('testPasswordScreen');
+    
     showAssessmentSummary();
 }
 
 // Show assessment summary before starting
 function showAssessmentSummary() {
-    if (!isAuthenticated) return showScreen('testPasswordScreen');
+    // For testing purposes, allow access without authentication
+    // In production, uncomment the line below:
+    // if (!isAuthenticated) return showScreen('testPasswordScreen');
+    
     calculateAssessmentTotals();
     renderSummarySections();
     showScreen('assessmentSummary');
@@ -440,17 +457,29 @@ function renderSummarySections() {
 
 // Start assessment from summary
 function startAssessmentFromSummary() {
+    console.log('=== START ASSESSMENT FROM SUMMARY DEBUG ===');
+    console.log('Starting assessment from summary');
+    if (!isAuthenticated) return showScreen('testPasswordScreen');
+    
     currentSectionIndex = 0;
     sectionScores = {};
     quizStarted = true;
     
+    console.log('Reset variables - currentSectionIndex:', currentSectionIndex);
+    console.log('Reset variables - quizStarted:', quizStarted);
+    
     // Initialize timer if enabled
     if (timeLimitConfig.enabled) {
+        console.log('Initializing timer');
         initializeTimer();
     }
     
     // Start with the first section
+    console.log('About to call startNextSection');
+    showScreen('quizScreen');
     startNextSection();
+    
+    console.log('=== END START ASSESSMENT FROM SUMMARY DEBUG ===');
 }
 
 // Initialize timer
@@ -538,18 +567,22 @@ function initializeFocusDetection() {
 
 // Handle tab visibility change
 function handleVisibilityChange() {
-    if (document.hidden && isQuizActive()) {
-        if (!hasReceivedWarning) {
-            showWarning('tab');
-        } else {
-            endTestAutomatically('tab');
+    // Add small delay to prevent rapid firing
+    setTimeout(() => {
+        if (document.hidden && isQuizActive()) {
+            if (!hasReceivedWarning) {
+                showWarning('tab');
+            } else {
+                endTestAutomatically('tab');
+            }
         }
-    }
+    }, 100);
 }
 
 // Handle mouse leaving the screen
 function handleMouseLeave(event) {
-    if (isQuizActive() && event.clientY <= 0) {
+    // Only trigger if mouse actually leaves the viewport (not just moving to another element)
+    if (isQuizActive() && event.clientY <= 0 && event.relatedTarget === null) {
         if (!hasReceivedWarning) {
             showWarning('mouse');
         } else {
@@ -560,13 +593,16 @@ function handleMouseLeave(event) {
 
 // Handle window blur (when user switches to another application)
 function handleWindowBlur() {
-    if (isQuizActive()) {
-        if (!hasReceivedWarning) {
-            showWarning('window');
-        } else {
-            endTestAutomatically('window');
+    // Add small delay to prevent rapid firing
+    setTimeout(() => {
+        if (isQuizActive() && document.hidden) {
+            if (!hasReceivedWarning) {
+                showWarning('window');
+            } else {
+                endTestAutomatically('window');
+            }
         }
-    }
+    }, 100);
 }
 
 // Check if quiz is currently active
@@ -580,6 +616,12 @@ function isQuizActive() {
 function showWarning(reason) {
     console.log(`Showing warning for: ${reason}`);
     
+    // Prevent multiple warnings from showing simultaneously
+    if (document.getElementById('warningScreen').classList.contains('active')) {
+        console.log('Warning screen already active, ignoring duplicate warning');
+        return;
+    }
+    
     // Set warning flag
     hasReceivedWarning = true;
     
@@ -588,14 +630,20 @@ function showWarning(reason) {
         clearTimeout(warningTimeout);
     }
     
-    // Show warning screen
-    showScreen('warningScreen');
-    
-    // Set timeout to automatically end test if user doesn't acknowledge warning
-    warningTimeout = setTimeout(() => {
-        console.log('Warning timeout reached, ending test');
-        endTestAutomatically(`${reason} - warning timeout`);
-    }, 30000); // 30 seconds timeout
+    // Show warning screen with better error handling
+    try {
+        showScreen('warningScreen');
+        
+        // Set timeout to automatically end test if user doesn't acknowledge warning
+        warningTimeout = setTimeout(() => {
+            console.log('Warning timeout reached, ending test');
+            endTestAutomatically(`${reason} - warning timeout`);
+        }, 30000); // 30 seconds timeout
+    } catch (error) {
+        console.error('Error showing warning screen:', error);
+        // Fallback: end test immediately if warning screen fails
+        endTestAutomatically(`${reason} - warning screen error`);
+    }
 }
 
 // End test automatically
@@ -678,8 +726,9 @@ function resetQuiz() {
     }
     
     // Reset question display
-    const questionText = document.getElementById('questionText');
-    const optionsContainer = document.getElementById('optionsContainer');
+    // Do not cache these; always re-query before render to avoid stale refs
+    let questionText = document.getElementById('questionText');
+    let optionsContainer = document.getElementById('optionsContainer');
     if (questionText) questionText.textContent = '';
     if (optionsContainer) optionsContainer.innerHTML = '';
     
@@ -709,11 +758,14 @@ function shuffleArray(array) {
 
 // Start the next section in sequence
 function startNextSection() {
+    console.log('=== START NEXT SECTION DEBUG ===');
     console.log('Starting next section, index:', currentSectionIndex);
     console.log('Section order:', sectionOrder);
+    console.log('Total sections:', sectionOrder.length);
     
     if (currentSectionIndex >= sectionOrder.length) {
         // All sections completed, show final results
+        console.log('All sections completed, showing final results');
         showFinalResults();
         return;
     }
@@ -723,6 +775,8 @@ function startNextSection() {
     
     console.log('Section key:', sectionKey);
     console.log('Section data:', section);
+    console.log('Section questions:', section ? section.questions : 'undefined');
+    console.log('Number of questions in section:', section ? section.questions.length : 'undefined');
     
     if (!section || !section.questions) {
         console.error('Section not found or has no questions:', sectionKey);
@@ -734,20 +788,46 @@ function startNextSection() {
     currentQuizData = [...section.questions];
     
     console.log('Current quiz data set to:', currentQuizData);
+    console.log('Current quiz data length:', currentQuizData.length);
+    console.log('First question:', currentQuizData[0]);
     
     // Use all questions from the section (no random selection)
     
-    currentSectionName.textContent = section.title;
+    if (currentSectionName) {
+        currentSectionName.textContent = section.title;
+        console.log('Updated section name to:', section.title);
+    }
+    
     currentQuestion = 0;
     score = 0;
     userAnswers = new Array(currentQuizData.length).fill(null);
+    userAnswersBySection[currentSection] = new Array(currentQuizData.length).fill(null);
     
-    showScreen('quiz');
+    console.log('About to show quiz screen');
+    showScreen('quizScreen');
+    // Ensure warning overlay is not blocking the quiz
+    const ws = document.getElementById('warningScreen');
+    if (ws) {
+        ws.classList.remove('active', 'fade-in-up');
+        ws.style.display = '';
+    }
+    
+    console.log('About to load question');
     loadQuestion();
+    
+    console.log('About to update progress');
     updateProgress();
     
     // Show progress container
-    document.getElementById('progressContainer').style.display = 'flex';
+    const progressContainer = document.getElementById('progressContainer');
+    if (progressContainer) {
+        progressContainer.style.display = 'flex';
+        console.log('Progress container shown');
+    } else {
+        console.error('Progress container not found');
+    }
+    
+    console.log('=== END START NEXT SECTION DEBUG ===');
 }
 
 // Show welcome screen
@@ -759,60 +839,142 @@ function showWelcome() {
 
 // Show specific screen
 function showScreen(screenName) {
+    console.group('showScreen');
+    console.log('Requested screenName:', screenName);
     // Prevent footer clicks from changing screens
     if (event && event.target && event.target.closest('.footers')) {
         console.log('Footer click prevented from changing screen to:', screenName);
+        console.groupEnd();
         return;
     }
     
+    // Clear any warning timeouts when changing screens
+    if (warningTimeout) {
+        clearTimeout(warningTimeout);
+        warningTimeout = null;
+    }
+    
     // Hide all screens
-    document.querySelectorAll('.screen').forEach(screen => {
+    const allScreens = document.querySelectorAll('.screen');
+    const beforeActive = [...allScreens].filter(s => s.classList.contains('active')).map(s => s.id);
+    console.log('Currently active before hide:', beforeActive);
+    allScreens.forEach(screen => {
+        if (screen.classList.contains('active')) {
+            console.log('Removing active from:', screen.id);
+        }
         screen.classList.remove('active');
+        screen.classList.remove('fade-in-up'); // Remove animation class
     });
     
     // Show target screen
-    const targetScreen = document.getElementById(screenName.endsWith('Screen') ? screenName : `${screenName}Screen`);
+    const targetId = screenName.endsWith('Screen') ? screenName : `${screenName}Screen`;
+    const targetScreen = document.getElementById(targetId);
+    console.log('Target screen element:', targetScreen);
+    console.log('Screen name:', screenName);
+    
     if (targetScreen) {
         targetScreen.classList.add('active');
-        targetScreen.classList.add('fade-in-up');
+        console.log('Added active class to screen:', screenName);
         
-        // Clear password fields when showing password screens
-        if (screenName === 'testPasswordScreen' || screenName === 'testPassword') {
-            const testPasswordField = document.getElementById('testPassword');
-            if (testPasswordField) {
-                testPasswordField.value = '';
-            }
-            // Hide any error messages
-            const testPasswordError = document.getElementById('testPasswordError');
-            if (testPasswordError) {
-                testPasswordError.style.display = 'none';
+        // Add animation class with a small delay for warning screen
+        if (screenName === 'warningScreen') {
+            setTimeout(() => {
+                targetScreen.classList.add('fade-in-up');
+            }, 50);
+        } else {
+            targetScreen.classList.add('fade-in-up');
+        }
+
+        // Hard-disable lingering warning overlay when switching away from it
+        if (targetId !== 'warningScreen') {
+            const ws = document.getElementById('warningScreen');
+            if (ws) {
+                ws.classList.remove('active', 'fade-in-up');
+                ws.style.display = ''; // let CSS control it
             }
         }
-        
-        if (screenName === 'manualMarkingPasswordScreen' || screenName === 'manualMarkingPassword') {
-            const manualPasswordField = document.getElementById('manualMarkingPassword');
-            if (manualPasswordField) {
-                manualPasswordField.value = '';
-            }
-            // Hide any error messages
-            const manualPasswordError = document.getElementById('manualMarkingPasswordError');
-            if (manualPasswordError) {
-                manualPasswordError.style.display = 'none';
+
+        // If switching to quiz, force-render the current question immediately
+        if (targetId === 'quizScreen') {
+            try {
+                if (currentQuizData && currentQuizData[currentQuestion]) {
+                    const qNumEl = document.getElementById('questionNumber');
+                    const qTextEl = document.getElementById('questionText');
+                    const optsEl = document.getElementById('optionsContainer');
+                    if (qNumEl) qNumEl.textContent = currentQuestion + 1;
+                    if (qTextEl) qTextEl.textContent = currentQuizData[currentQuestion].question || '';
+                    if (optsEl) optsEl.innerHTML = '';
+                    renderQuestionByType(currentQuizData[currentQuestion]);
+                    updateNavigationButtons();
+                } else {
+                    console.warn('No current question to render on quizScreen activation');
+                }
+            } catch (e) {
+                console.error('Force render on quizScreen failed:', e);
             }
         }
-        
-        // All screens are now full width by default - no special handling needed
+    } else {
+        console.error('Target screen not found:', screenName);
     }
+
+    // Debug state after show
+    const afterActive = [...document.querySelectorAll('.screen.active')].map(s => s.id);
+    console.log('Active screens after show:', afterActive);
+    const topAtPoint = document.elementFromPoint(window.innerWidth/2, window.innerHeight/2);
+    if (topAtPoint) {
+        console.log('Top element at viewport center:', topAtPoint.id || topAtPoint.className);
+        if (targetScreen && topAtPoint !== targetScreen && !targetScreen.contains(topAtPoint)) {
+            console.warn('Another element is on top of target screen:', topAtPoint);
+        }
+    }
+    console.groupEnd();
+    
+    // Clear password fields when showing password screens
+    if (screenName === 'testPasswordScreen' || screenName === 'testPassword') {
+        const testPasswordField = document.getElementById('testPassword');
+        if (testPasswordField) {
+            testPasswordField.value = '';
+        }
+        // Hide any error messages
+        const testPasswordError = document.getElementById('testPasswordError');
+        if (testPasswordError) {
+            testPasswordError.style.display = 'none';
+        }
+    }
+    
+    if (screenName === 'manualMarkingPasswordScreen' || screenName === 'manualMarkingPassword') {
+        const manualPasswordField = document.getElementById('manualMarkingPassword');
+        if (manualPasswordField) {
+            manualPasswordField.value = '';
+        }
+        // Hide any error messages
+        const manualPasswordError = document.getElementById('manualMarkingPasswordError');
+        if (manualPasswordError) {
+            manualPasswordError.style.display = 'none';
+        }
+    }
+    
+    // All screens are now full width by default - no special handling needed
 }
 
 // Load current question
 function loadQuestion() {
+    console.log('=== LOAD QUESTION DEBUG ===');
     console.log('Loading question:', currentQuestion);
     console.log('Current quiz data:', currentQuizData);
     console.log('Current section:', currentSection);
+    console.log('Quiz data length:', currentQuizData ? currentQuizData.length : 'undefined');
+    
+    // Check if DOM elements exist
+    console.log('questionNumber element:', questionNumber);
+    console.log('questionText element:', questionText);
+    console.log('optionsContainer element:', optionsContainer);
     
     if (!currentQuizData || currentQuizData.length === 0) {
         console.error('No quiz data available');
+        if (questionText) {
+            questionText.textContent = 'No questions available. Please try refreshing the page.';
+        }
         return;
     }
     
@@ -820,24 +982,52 @@ function loadQuestion() {
     
     if (!question) {
         console.error('No question found at index:', currentQuestion);
+        if (questionText) {
+            questionText.textContent = 'Question not found. Please try refreshing the page.';
+        }
         return;
     }
     
     console.log('Question data:', question);
+    console.log('Question text:', question.question);
     
+    // Re-query live elements to avoid updating hidden duplicates
+    const qNumEl = document.getElementById('questionNumber');
+    const qTextEl = document.getElementById('questionText');
+    const optsEl = document.getElementById('optionsContainer');
+
     // Update question number and text
-    questionNumber.textContent = currentQuestion + 1;
-    questionText.textContent = question.question;
+    if (qNumEl) {
+        questionNumber.textContent = currentQuestion + 1;
+        console.log('Updated question number to:', currentQuestion + 1);
+    }
+    if (qTextEl) {
+        qTextEl.textContent = question.question;
+        console.log('Updated question text to:', question.question);
+    }
     
     // Clear options container
-    optionsContainer.innerHTML = '';
+    if (optsEl) {
+        optsEl.innerHTML = '';
+        console.log('Cleared options container');
+    }
     
     // Render question based on type
-    renderQuestionByType(question);
+    try {
+        console.log('Rendering question type:', question.type);
+        renderQuestionByType(question);
+        console.log('Question rendered successfully');
+    } catch (error) {
+        console.error('Error rendering question:', error);
+        if (optionsContainer) {
+            optionsContainer.innerHTML = '<p>Error loading question. Please try refreshing the page.</p>';
+        }
+    }
     
     // Update navigation buttons
     updateNavigationButtons();
     updateProgress();
+    console.log('=== END LOAD QUESTION DEBUG ===');
 }
 
 // Render question based on type
@@ -907,6 +1097,9 @@ function renderFillBlank(question) {
     
     input.addEventListener('input', () => {
         userAnswers[currentQuestion] = input.value;
+        if (currentSection && userAnswersBySection[currentSection]) {
+            userAnswersBySection[currentSection][currentQuestion] = input.value;
+        }
         updateNavigationButtons();
     });
     
@@ -1029,12 +1222,16 @@ function renderDropdown(question) {
         dropdown.appendChild(optionEl);
     });
     
-    if (userAnswers[currentQuestion] !== null) {
+    if (userAnswers[currentQuestion] !== null && userAnswers[currentQuestion] !== undefined) {
         dropdown.value = userAnswers[currentQuestion];
     }
     
     dropdown.addEventListener('change', () => {
-        userAnswers[currentQuestion] = parseInt(dropdown.value);
+        const val = parseInt(dropdown.value);
+        userAnswers[currentQuestion] = val;
+        if (currentSection && userAnswersBySection[currentSection]) {
+            userAnswersBySection[currentSection][currentQuestion] = val;
+        }
         updateNavigationButtons();
     });
     
@@ -1070,6 +1267,9 @@ function renderTransformation(question) {
     
     input.addEventListener('input', () => {
         userAnswers[currentQuestion] = input.value;
+        if (currentSection && userAnswersBySection[currentSection]) {
+            userAnswersBySection[currentSection][currentQuestion] = input.value;
+        }
         updateNavigationButtons();
     });
     
@@ -1112,10 +1312,12 @@ function renderCloze(question) {
             
             // Add event listener
             input.addEventListener('input', () => {
-                if (!userAnswers[currentQuestion]) {
-                    userAnswers[currentQuestion] = [];
-                }
+                if (!userAnswers[currentQuestion]) userAnswers[currentQuestion] = [];
                 userAnswers[currentQuestion][i] = input.value;
+                if (currentSection && userAnswersBySection[currentSection]) {
+                    if (!userAnswersBySection[currentSection][currentQuestion]) userAnswersBySection[currentSection][currentQuestion] = [];
+                    userAnswersBySection[currentSection][currentQuestion][i] = input.value;
+                }
                 updateNavigationButtons();
             });
             
@@ -1140,7 +1342,15 @@ function selectOption(optionIndex) {
     
     // Store user answer
     userAnswers[currentQuestion] = optionIndex;
+    if (currentSection) {
+        userAnswersBySection[currentSection] = userAnswersBySection[currentSection] || [];
+        userAnswersBySection[currentSection][currentQuestion] = optionIndex;
+    }
     
+    // Mirror per-section answer
+    if (currentSection && userAnswersBySection[currentSection]) {
+        userAnswersBySection[currentSection][currentQuestion] = optionIndex;
+    }
     // Enable next button
     nextBtn.disabled = false;
 }
@@ -1158,7 +1368,15 @@ function selectTrueFalse(value) {
     
     // Store user answer
     userAnswers[currentQuestion] = value;
+    if (currentSection) {
+        userAnswersBySection[currentSection] = userAnswersBySection[currentSection] || [];
+        userAnswersBySection[currentSection][currentQuestion] = value;
+    }
     
+    // Mirror per-section answer
+    if (currentSection && userAnswersBySection[currentSection]) {
+        userAnswersBySection[currentSection][currentQuestion] = value;
+    }
     // Enable next button
     nextBtn.disabled = false;
 }
@@ -1212,6 +1430,12 @@ function addDragAndDropListeners() {
                 userAnswers[currentQuestion] = {};
             }
             userAnswers[currentQuestion][leftIndex] = rightIndex;
+            if (currentSection && userAnswersBySection[currentSection]) {
+                if (!userAnswersBySection[currentSection][currentQuestion]) {
+                    userAnswersBySection[currentSection][currentQuestion] = {};
+                }
+                userAnswersBySection[currentSection][currentQuestion][leftIndex] = rightIndex;
+            }
             
             // Visual feedback
             zone.textContent = document.querySelector(`[data-left-index="${leftIndex}"]`).textContent;
@@ -1265,6 +1489,9 @@ function addWordOrderListeners() {
                 // Simple array to track current order
                 const currentOrder = Array.from(document.querySelectorAll('.word-item')).map(el => el.textContent);
                 userAnswers[currentQuestion] = currentOrder;
+                if (currentSection && userAnswersBySection[currentSection]) {
+                    userAnswersBySection[currentSection][currentQuestion] = currentOrder;
+                }
                 
                 updateNavigationButtons();
             }
@@ -1377,37 +1604,20 @@ function finishQuiz() {
         // Show section completion message (no score shown)
         showSectionComplete();
     } else {
-        // All sections completed, check if manual marking is needed
-        if (manualMarkingConfig.enabled && needsManualMarking()) {
-            showManualMarkingPassword();
-        } else {
-            // Clean up focus detection when quiz ends normally
-            cleanupFocusDetection();
-            showFinalResults();
-        }
+        // All sections completed -> go to submit flow
+        cleanupFocusDetection();
+        showSubmitResults();
     }
 }
 
 // Check if any sections require manual marking
-function needsManualMarking() {
-    return sectionOrder.some(sectionKey => 
-        manualMarkingConfig.sections[sectionKey] && 
-        sectionScores[sectionKey]
-    );
-}
+function needsManualMarking() { return false; }
 
 // Show manual marking password screen
-function showManualMarkingPassword() {
-    if (!isAuthenticated) return showScreen('testPasswordScreen');
-    showScreen('manualMarkingPassword');
-}
+function showManualMarkingPassword() { return; }
 
 // Show manual marking interface
-function showManualMarkingInterface() {
-    if (!isAuthenticated) return showScreen('testPasswordScreen');
-    renderManualMarkingSections();
-    showScreen('manualMarking');
-}
+function showManualMarkingInterface() { return; }
 
 // Render manual marking sections
 function renderManualMarkingSections() {
@@ -1419,6 +1629,7 @@ function renderManualMarkingSections() {
         manualMarkingConfig.sections[sectionKey] && sectionScores[sectionKey]
     );
     
+    window.__manualAssigned = {}; // track assigned marks completeness
     manualSections.forEach(sectionKey => {
         const section = quizSections[sectionKey];
         const sectionScore = sectionScores[sectionKey];
@@ -1427,10 +1638,11 @@ function renderManualMarkingSections() {
         sectionDiv.className = 'marking-section';
         
         sectionDiv.innerHTML = `
-            <h3 class="marking-section-title">${section.title}</h3>
-            <div class="marking-questions" id="markingQuestions-${sectionKey}">
-                <!-- Questions will be populated here -->
+            <div class="marking-section-header">
+              <h3 class="marking-section-title">${section.title}</h3>
+              <div class="marking-section-total" id="markingTotal-${sectionKey}">0 / ${sectionScore.total} marks</div>
             </div>
+            <div class="marking-questions" id="markingQuestions-${sectionKey}"></div>
         `;
         
         markingSections.appendChild(sectionDiv);
@@ -1453,6 +1665,7 @@ function populateMarkingQuestions(sectionKey, sectionScore) {
     
     // Get the questions that were actually used in the quiz
     // For now, we'll show all questions from the section
+    window.__manualAssigned[sectionKey] = window.__manualAssigned[sectionKey] || {};
     originalQuestions.forEach((question, index) => {
         const questionDiv = document.createElement('div');
         questionDiv.className = 'marking-question';
@@ -1464,109 +1677,30 @@ function populateMarkingQuestions(sectionKey, sectionScore) {
         
         questionDiv.innerHTML = `
             <div class="marking-question-text">Question ${index + 1}: ${question.question}</div>
-            <div class="marking-question-answer">
-                <strong>Student Answer:</strong> ${getStudentAnswerText(question, userAnswers[index])}
+            <div class="marking-question-answer"><strong>Student Answer:</strong> ${getStudentAnswerText(question, userAnswers[index])}</div>
+            <div class="marking-suggested"><strong>System Suggestion:</strong> ${systemSuggestedMarks}/${maxMarks} marks</div>
+            <div class="marking-controls">
+                <button class="marking-btn marking-correct" data-section="${sectionKey}" data-question="${index}" data-max="${maxMarks}">Correct (${maxMarks})</button>
+                <button class="marking-btn marking-incorrect" data-section="${sectionKey}" data-question="${index}" data-max="${maxMarks}">Incorrect (0)</button>
+                <label class="marking-custom-label">Partial:
+                  <select class="partial-select" data-section="${sectionKey}" data-question="${index}">
+                    ${Array.from({length: maxMarks-1}, (_,i)=>`<option value="${i+1}">${i+1}</option>`).join('')}
+                  </select>
+                </label>
+                <span class="marking-current" id="markingCurrent-${sectionKey}-${index}">—</span>
             </div>
-            <div class="marking-suggested">
-                <strong>System Suggestion:</strong> ${systemSuggestedMarks}/${maxMarks} marks
-            </div>
-            <div class="marking-options">
-                <button class="marking-btn marking-correct" 
-                        data-section="${sectionKey}" 
-                        data-question="${index}" 
-                        data-marks="${maxMarks}">
-                    <span class="fas fa-check" aria-hidden="true"></span>
-                    Correct (${maxMarks} marks)
-                </button>
-                <button class="marking-btn marking-incorrect" 
-                        data-section="${sectionKey}" 
-                        data-question="${index}" 
-                        data-marks="0">
-                    <span class="fas fa-times" aria-hidden="true"></span>
-                    Incorrect (0 marks)
-                </button>
-                <div class="marking-custom">
-                    <label class="marking-custom-label">Custom:</label>
-                    <input type="number" class="marking-custom-input" 
-                           id="custom-${sectionKey}-${index}" 
-                           min="0" max="${maxMarks}" 
-                           value="${systemSuggestedMarks}" 
-                           data-section="${sectionKey}" 
-                           data-question="${index}">
-                    <span class="marking-max-marks">/ ${maxMarks}</span>
-                    <button class="marking-btn marking-apply-custom" 
-                            data-section="${sectionKey}" 
-                            data-question="${index}">
-                        Apply
-                    </button>
-                </div>
-            </div>
-            <input type="hidden" class="marking-final-marks" 
-                   id="marks-${sectionKey}-${index}" 
-                   value="${systemSuggestedMarks}" 
-                   data-section="${sectionKey}" 
-                   data-question="${index}">
+            <input type="hidden" class="marking-final-marks" id="marks-${sectionKey}-${index}" value="" data-section="${sectionKey}" data-question="${index}">
         `;
-        
+
         questionsContainer.appendChild(questionDiv);
+
+        // initialize suggested value as a hint only (not final)
     });
 }
 
 // Add event listeners for marking buttons using event delegation
 function addMarkingEventListeners() {
-    // Use event delegation to handle dynamically created buttons
-    document.addEventListener('click', (e) => {
-        // Ignore clicks on footer
-        if (e.target.closest('.footers')) {
-            return;
-        }
-        
-        if (e.target.classList.contains('marking-correct')) {
-            console.log('Correct button clicked');
-            const sectionKey = e.target.dataset.section;
-            const questionIndex = e.target.dataset.question;
-            const marks = parseInt(e.target.dataset.marks);
-            
-            console.log('Section:', sectionKey, 'Question:', questionIndex, 'Marks:', marks);
-            
-            // Update hidden input
-            const hiddenInput = document.getElementById(`marks-${sectionKey}-${questionIndex}`);
-            if (hiddenInput) {
-                hiddenInput.value = marks;
-                console.log('Updated hidden input to:', hiddenInput.value);
-                updateMarkingButtonStates(sectionKey, questionIndex, 'correct');
-            } else {
-                console.log('Hidden input not found:', `marks-${sectionKey}-${questionIndex}`);
-            }
-        }
-        
-        if (e.target.classList.contains('marking-incorrect')) {
-            const sectionKey = e.target.dataset.section;
-            const questionIndex = e.target.dataset.question;
-            const marks = parseInt(e.target.dataset.marks);
-            
-            // Update hidden input
-            const hiddenInput = document.getElementById(`marks-${sectionKey}-${questionIndex}`);
-            if (hiddenInput) {
-                hiddenInput.value = marks;
-                updateMarkingButtonStates(sectionKey, questionIndex, 'incorrect');
-            }
-        }
-        
-        if (e.target.classList.contains('marking-apply-custom')) {
-            const sectionKey = e.target.dataset.section;
-            const questionIndex = e.target.dataset.question;
-            const customInput = document.getElementById(`custom-${sectionKey}-${questionIndex}`);
-            const marks = parseInt(customInput.value) || 0;
-            
-            // Update hidden input
-            const hiddenInput = document.getElementById(`marks-${sectionKey}-${questionIndex}`);
-            if (hiddenInput) {
-                hiddenInput.value = marks;
-                updateMarkingButtonStates(sectionKey, questionIndex, 'custom');
-            }
-        }
-    });
+    return;
 }
 
 // Update marking button states
@@ -1581,10 +1715,40 @@ function updateMarkingButtonStates(sectionKey, questionIndex, selectedType) {
     // Highlight selected button
     if (selectedType === 'correct') {
         questionDiv.querySelector('.marking-correct').classList.add('selected');
+        const max = parseInt(questionDiv.querySelector('.marking-correct').dataset.max);
+        const current = document.getElementById(`markingCurrent-${sectionKey}-${questionIndex}`);
+        if (current) current.textContent = `${max}/${max}`;
     } else if (selectedType === 'incorrect') {
         questionDiv.querySelector('.marking-incorrect').classList.add('selected');
+        const max = parseInt(questionDiv.querySelector('.marking-correct').dataset.max);
+        const current = document.getElementById(`markingCurrent-${sectionKey}-${questionIndex}`);
+        if (current) current.textContent = `0/${max}`;
     } else if (selectedType === 'custom') {
-        questionDiv.querySelector('.marking-apply-custom').classList.add('selected');
+        // no button to select; the select value is shown in running label
+    }
+}
+
+// Compute running totals and enable Complete when all marked
+function updateManualRunningTotals() {
+    let allAssigned = true;
+    // per-section totals
+    Object.keys(window.__manualAssigned).forEach(sectionKey => {
+        const orig = quizSections[sectionKey].questions || [];
+        const totalMax = orig.reduce((s,q)=>s+(q.marks||1),0);
+        let awarded = 0;
+        orig.forEach((q, idx) => {
+            const input = document.getElementById(`marks-${sectionKey}-${idx}`);
+            const val = input ? parseInt(input.value)||0 : 0;
+            awarded += val;
+            if (input && input.value === '') allAssigned = false;
+        });
+        const totalEl = document.getElementById(`markingTotal-${sectionKey}`);
+        if (totalEl) totalEl.textContent = `${awarded} / ${totalMax} marks`;
+    });
+    const completeBtn = document.getElementById('completeMarkingBtn');
+    if (completeBtn) {
+        completeBtn.disabled = !allAssigned;
+        completeBtn.textContent = allAssigned ? 'Complete Marking & View Results' : 'Mark all questions to continue';
     }
 }
 
@@ -1622,51 +1786,8 @@ function getStudentAnswerText(question, userAnswer) {
 
 // Complete manual marking and show results
 function completeManualMarking() {
-    // Collect manual marks from hidden inputs
-    const manualMarks = {};
-    
-    document.querySelectorAll('.marking-final-marks').forEach(input => {
-        const sectionKey = input.dataset.section;
-        const questionIndex = parseInt(input.dataset.question);
-        const marks = parseInt(input.value) || 0;
-        
-        if (!manualMarks[sectionKey]) {
-            manualMarks[sectionKey] = {};
-        }
-        manualMarks[sectionKey][questionIndex] = marks;
-    });
-    
-    // Update section scores with manual marks
-    Object.keys(manualMarks).forEach(sectionKey => {
-        const sectionScore = sectionScores[sectionKey];
-        const originalQuestions = quizSections[sectionKey].questions;
-        
-        let manualScore = 0;
-        let totalMarks = 0;
-        
-        originalQuestions.forEach((question, index) => {
-            const maxMarks = question.marks || 1; // Use individual question marks
-            const awardedMarks = manualMarks[sectionKey][index] || 0;
-            
-            manualScore += awardedMarks;
-            totalMarks += maxMarks;
-        });
-        
-        // Update section score
-        sectionScores[sectionKey] = {
-            score: manualScore,
-            total: totalMarks,
-            percentage: Math.round((manualScore / totalMarks) * 100),
-            questions: originalQuestions.length,
-            manualMarked: true
-        };
-    });
-    
-    // Clean up focus detection when manual marking is complete
-    cleanupFocusDetection();
-    
-    // Show final results
-    showFinalResults();
+    // Deprecated: replaced by submit flow
+    showSubmitResults();
 }
 
 // Check if answer is correct based on question type
@@ -1727,37 +1848,31 @@ function isAnswerCorrect(question, userAnswer) {
 function showSectionComplete() {
     if (!isAuthenticated) return showScreen('testPasswordScreen');
     const sectionName = quizSections[currentSection].title;
-    const nextSectionName = quizSections[sectionOrder[currentSectionIndex]].title;
-    
-    // Hide score circle during section completion
+    const nextKey = sectionOrder[currentSectionIndex];
+    const next = quizSections[nextKey];
+    const nextTitle = next?.title || 'Next Section';
+    const nextCount = next?.questions?.length || 0;
+    const nextMarks = (next?.questions || []).reduce((s,q)=>s+(q.marks||1),0);
+
+    // Prepare a neutral interstitial card: no previous section feedback
     const scoreCircle = document.querySelector('.score-circle');
-    if (scoreCircle) {
-        scoreCircle.style.display = 'none';
-    }
-    
-    // Update results title and description for section completion
-    resultsTitle.textContent = `${sectionName} Complete!`;
-    resultsDescription.textContent = `Great job! Moving to ${nextSectionName}...`;
-    
-    // Reset score display for section completion
-    const scorePercentage = document.getElementById('scorePercentage');
+    if (scoreCircle) scoreCircle.style.display = 'none';
+
+    resultsTitle.textContent = `${sectionName} complete.`;
+    resultsDescription.textContent = `Up next: ${nextTitle} • ${nextCount} questions • ${nextMarks} marks.`;
+
+    const scorePercentageEl = document.getElementById('scorePercentage');
     const scoreLabel = document.querySelector('.score-label');
-    if (scorePercentage) scorePercentage.textContent = '';
+    if (scorePercentageEl) scorePercentageEl.textContent = '';
     if (scoreLabel) scoreLabel.textContent = '';
-    
-    // Hide action buttons during section completion
+
+    // Ensure any action buttons are hidden
     const resultsActions = document.querySelector('.results-actions');
-    if (resultsActions) {
-        resultsActions.style.display = 'none';
-    }
-    
-    // Show results screen briefly
+    if (resultsActions) resultsActions.style.display = 'none';
+
+    // Show the neutral interstitial briefly, then continue
     showScreen('results');
-    
-    // Auto-advance to next section after 3 seconds
-    setTimeout(() => {
-        startNextSection();
-    }, 3000);
+    setTimeout(() => { startNextSection(); }, 1500);
 }
 
 // Show final comprehensive results
@@ -1946,6 +2061,56 @@ function retakeAssessment() {
     startAssessment();
 }
 
+// Submit results flow
+function showSubmitResults() {
+    showScreen('submitResultsScreen');
+    const btn = document.getElementById('submitResultsBtn');
+    if (btn && !btn.__wired) {
+        btn.__wired = true;
+        btn.addEventListener('click', submitResultsToEmail);
+    }
+    const backBtn = document.getElementById('backToWelcomeAfterSubmit');
+    if (backBtn && !backBtn.__wired) {
+        backBtn.__wired = true;
+        backBtn.addEventListener('click', () => showScreen('welcomeScreen'));
+    }
+}
+
+function submitResultsToEmail() {
+    const nameInput = document.getElementById('participantName');
+    const name = nameInput ? nameInput.value.trim() : '';
+    if (!name) { nameInput && nameInput.focus(); return; }
+    const form = document.getElementById('hiddenResultsForm');
+    if (!form) return;
+    form.innerHTML = '';
+    // Participant
+    addHidden(form, 'name', name);
+    addHidden(form, '_subject', 'TUGA Assessment Submission');
+    // Per-question: "Answer - score" (no aggregates), using per-section answers
+    sectionOrder.forEach(sectionKey => {
+        const section = quizSections[sectionKey];
+        if (!section) return;
+        const answers = userAnswersBySection[sectionKey] || [];
+        (section.questions||[]).forEach((q, idx) => {
+            const ans = answers[idx];
+            const max = q.marks || 1;
+            const suggested = isAnswerCorrect(q, ans) ? max : 0;
+            const answerText = getStudentAnswerText(q, ans);
+            addHidden(form, `q_${sectionKey}_${idx}`, `${answerText} - ${suggested}`);
+        });
+    });
+    form.submit();
+    showScreen('submittedScreen');
+}
+
+function addHidden(form, name, value) {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = String(name);
+    input.value = String(value);
+    form.appendChild(input);
+}
+
 // Share results
 function shareResults() {
     let shareText;
@@ -2034,13 +2199,48 @@ function addAnimations() {
 document.addEventListener('DOMContentLoaded', () => {
     initQuiz();
     addAnimations();
-    
-    // Add some extra visual flair
-    setTimeout(() => {
-        document.body.style.opacity = '1';
-    }, 100);
+    // Ensure page is fully visible
+    document.body.style.opacity = '1';
+
+    // Wire Start Assessment button on welcome screen
+    const startAssessmentBtn = document.getElementById('startAssessmentBtn');
+    if (startAssessmentBtn && !startAssessmentBtn.__wired) {
+        startAssessmentBtn.__wired = true;
+        startAssessmentBtn.addEventListener('click', startAssessment);
+    }
+
+    // Wire Start Assessment button on assessment summary screen
+    const startAssessmentFromSummaryBtn = document.getElementById('startAssessmentFromSummaryBtn');
+    if (startAssessmentFromSummaryBtn && !startAssessmentFromSummaryBtn.__wired) {
+        startAssessmentFromSummaryBtn.__wired = true;
+        startAssessmentFromSummaryBtn.addEventListener('click', startAssessmentFromSummary);
+    }
 });
 
-// Add loading animation
-document.body.style.opacity = '0';
+// Test function for debugging (can be called from browser console)
+window.testQuiz = function() {
+    console.log('=== QUIZ TEST DEBUG ===');
+    console.log('Quiz sections:', quizSections);
+    console.log('Section order:', sectionOrder);
+    console.log('Current section index:', currentSectionIndex);
+    console.log('Current quiz data:', currentQuizData);
+    console.log('Quiz started:', quizStarted);
+    
+    // Test loading first question manually
+    if (quizSections && quizSections.vocabulary && quizSections.vocabulary.questions) {
+        console.log('Testing manual question load...');
+        currentQuizData = [...quizSections.vocabulary.questions];
+        currentQuestion = 0;
+        currentSection = 'vocabulary';
+        
+        console.log('Set quiz data:', currentQuizData);
+        console.log('First question:', currentQuizData[0]);
+        
+        // Try to load question
+        loadQuestion();
+    } else {
+        console.error('Quiz sections not available');
+    }
+    console.log('=== END QUIZ TEST DEBUG ===');
+};
 document.body.style.transition = 'opacity 0.5s ease-in-out';

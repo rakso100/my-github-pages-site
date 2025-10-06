@@ -275,6 +275,18 @@ body::before {
     transform: translateY(0);
     display: flex; /* show active as flex for centering */
     z-index: 1;
+    overflow-y: auto; /* allow scrolling for tall content */
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Safety: non-active screens never block clicks or layout */
+.screen:not(.active) {
+    pointer-events: none;
+}
+
+/* Ensure warning overlay never lingers when not active */
+#warningScreen:not(.active) {
+    display: none !important;
 }
 
 /* Ensure welcome screen active state overrides other screen styles */
@@ -1261,6 +1273,20 @@ body::before {
     justify-content: center;
     min-height: 100vh;
     background: linear-gradient(135deg, var(--warning-50) 0%, var(--orange-50) 100%);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.warning-screen.active {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .warning-content {
@@ -1272,6 +1298,11 @@ body::before {
     width: 100%;
     text-align: center;
     border: 2px solid var(--warning-200);
+    position: relative;
+    z-index: 10000;
+    margin: 1rem;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 .warning-icon {
@@ -1363,6 +1394,11 @@ body::before {
     color: var(--gray-900);
     background: white;
     transition: border-color 0.2s ease;
+    -webkit-text-size-adjust: 100%;
+    -webkit-appearance: none;
+    autocapitalize: off;
+    autocomplete: off;
+    autocorrect: off;
 }
 
 .password-input:focus {
@@ -1383,6 +1419,16 @@ body::before {
 /* Manual Marking Screen */
 .manual-marking-screen .manual-marking-content {
     width: 100%;
+    max-height: none; /* allow content to grow */
+}
+
+/* Extra breathing room for bottom actions on tall lists */
+.manual-marking-screen .marking-actions {
+    position: sticky;
+    bottom: 0;
+    background: linear-gradient(to top, rgba(255,255,255,0.95), rgba(255,255,255,0.7));
+    padding-top: 12px;
+    margin-top: 12px;
 }
 
 .marking-header {
@@ -1410,6 +1456,9 @@ body::before {
     margin-bottom: 1.5rem;
     box-shadow: var(--shadow-sm);
 }
+.marking-section-header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px}
+.marking-controls .marking-btn{padding:8px 12px;border:1px solid var(--gray-300);border-radius:8px;background:#fff;cursor:pointer}
+.marking-btn.selected{background:var(--primary-50);border-color:var(--primary-400)}
 
 .marking-section-title {
     font-size: 1.25rem;
@@ -1796,4 +1845,3 @@ body::before {
         font-size: 1.5rem;
     }
 }
-

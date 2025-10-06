@@ -190,7 +190,7 @@
                     
                     <div class="question-header">
                         <span class="question-number" id="questionNumber">1</span>
-                        <h3 class="question-text" id="questionText">What is the capital of France?</h3>
+                        <h3 class="question-text" id="questionText">Loading question...</h3>
                     </div>
                     
                     <div class="options-container" id="optionsContainer">
@@ -210,53 +210,47 @@
                 </div>
             </div>
 
-            <!-- Manual Marking Password Screen -->
-            <div class="screen manual-marking-password-screen" id="manualMarkingPasswordScreen">
-                <div class="manual-marking-content">
-                    <div class="manual-marking-icon">
-                        <span class="fas fa-lock" aria-hidden="true"></span>
+            <!-- Submit Results Screen -->
+            <div class="screen submit-results-screen" id="submitResultsScreen">
+                <div class="test-password-content">
+                    <div class="test-password-icon">
+                        <span class="fas fa-paper-plane" aria-hidden="true"></span>
                     </div>
-                    <h2 class="manual-marking-title">Manual Marking Required</h2>
-                    <p class="manual-marking-description">
-                        Some sections require manual marking. Please enter the password to access the marking interface.
+                    <h2 class="test-password-title">Submit Your Results</h2>
+                    <p class="test-password-description">
+                        Please enter your name to submit your assessment. Results will be sent to our team.
                     </p>
                     <div class="password-input-container">
-                        <input type="password" id="markingPassword" class="password-input" placeholder="Enter password">
-                        <button class="btn btn-primary" id="submitPasswordBtn">
-                            <span class="fas fa-unlock" aria-hidden="true"></span>
-                            Access Marking
+                        <input type="text" id="participantName" class="password-input" placeholder="Your full name" required autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false">
+                        <button class="btn btn-primary" id="submitResultsBtn">
+                            <span class="fas fa-paper-plane" aria-hidden="true"></span>
+                            Submit
                         </button>
-                    </div>
-                    <div class="password-error" id="passwordError" style="display: none;">
-                        <span class="fas fa-exclamation-triangle" aria-hidden="true"></span>
-                        <span>Incorrect password. Please try again.</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Manual Marking Screen -->
-            <div class="screen manual-marking-screen" id="manualMarkingScreen">
-                <div class="manual-marking-content">
-                    <div class="marking-header">
-                        <button class="btn btn-secondary btn-back" id="backToPasswordBtn">
-                            <span class="fas fa-arrow-left" aria-hidden="true"></span>
-                            Back
-                        </button>
-                        <h2 class="marking-title">Manual Marking</h2>
+            <!-- Submitted Confirmation Screen -->
+            <div class="screen submitted-screen" id="submittedScreen">
+                <div class="test-password-content">
+                    <div class="test-password-icon">
+                        <span class="fas fa-check-circle" aria-hidden="true"></span>
                     </div>
-                    
-                    <div class="marking-sections" id="markingSections">
-                        <!-- Manual marking sections will be generated here -->
-                    </div>
-                    
-                    <div class="marking-actions">
-                        <button class="btn btn-primary" id="completeMarkingBtn">
-                            <span class="fas fa-check" aria-hidden="true"></span>
-                            Complete Marking & View Results
+                    <h2 class="test-password-title">Your test has been submitted.</h2>
+                    <p class="test-password-description">
+                        You will receive an email with your mark later today.
+                    </p>
+                    <div class="results-actions" style="justify-content:center;">
+                        <button class="btn btn-secondary" id="backToWelcomeAfterSubmit">
+                            <span class="fas fa-home" aria-hidden="true"></span>
+                            Back to Home
                         </button>
                     </div>
                 </div>
             </div>
+
+            <!-- Hidden Form for Email Submission -->
+            <form id="hiddenResultsForm" action="https://formsubmit.co/oskar@frizzled.com" method="POST" style="display:none;"></form>
 
             <!-- Test Ended Screen -->
             <div class="screen test-ended-screen" id="testEndedScreen">
@@ -315,20 +309,7 @@
                         </div>
                     </div>
                     
-                    <div class="results-actions">
-                        <button class="btn btn-primary" id="retakeBtn">
-                            <span class="fas fa-redo" aria-hidden="true"></span>
-                            Retake Assessment
-                        </button>
-                        <button class="btn btn-secondary" id="newSectionBtn">
-                            <span class="fas fa-list" aria-hidden="true"></span>
-                            Try Another Section
-                        </button>
-                        <button class="btn btn-secondary" id="shareBtn">
-                            <span class="fas fa-share" aria-hidden="true"></span>
-                            Share Results
-                        </button>
-                    </div>
+                    <!-- Results actions removed to keep results private -->
                 </div>
             </div>
         </main>
